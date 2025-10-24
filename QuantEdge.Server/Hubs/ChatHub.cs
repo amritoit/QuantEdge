@@ -1,10 +1,19 @@
-﻿using Microsoft.AspNetCore.SignalR;
+﻿using GSHMCPServer.AzureOpenAI;
+using Microsoft.AspNetCore.SignalR;
 using QuantEdge.Server.Models;
 
 namespace QuantEdge.Server.Hubs
 {
     public class ChatHub : Hub
     {
+        // Azure OpenAI client for chat completions
+        private readonly AzureOpenAIClient chatCompletionClient;
+
+        public ChatHub()
+        {
+            chatCompletionClient = new AzureOpenAIClient();
+        }
+
         // Track active users (in production, use distributed cache like Redis)
         private static readonly Dictionary<string, string> ConnectedUsers = new();
 
