@@ -1,111 +1,128 @@
+src/components/ChatInterface.vue
 <script setup>
-import { ref, onMounted, onUnmounted, nextTick } from 'vue'
-import * as signalR from '@microsoft/signalr'
+  import { ref, onMounted, onUnmounted, nextTick } from 'vue'
+  import * as signalR from '@microsoft/signalr'
 
-const messages = ref([])
-const newMessage = ref('')
-const username = ref('')
-const isConnected = ref(false)
-const isTyping = ref(false)
-const typingUser = ref('')
-const connection = ref(null)
-const messagesContainer = ref(null)
+  const messages = ref([])
+  const newMessage = ref('')
+  const username = ref('')
+  const isConnected = ref(false)
+  const isTyping = ref(false)
+  const typingUser = ref('')
+  const connection = ref(null)
+  const messagesContainer = ref(null)
 
-let typingTimeout = null
+  let typingTimeout = null
 
-const scrollToBottom = () => {
-  nextTick(() => {
-    if (messagesContainer.value) {
-      messagesContainer.value.scrollTop = messagesContainer.value.scrollHeight
+  const scrollToBottom = () => {
+    nextTick(() => {
+      if (messagesContainer.value) {
+        messagesContainer.value.scrollTop = messagesContainer.value.scrollHeight
+      }
+    })
+  }
+
+  const connectToChat = async () => {
+    if (!username.value.trim()) {
+      alert('Please enter a username')
+      return
     }
+
+    try {
+      connection.value = new signalR.HubConnectionBuilder()
+        .withUrl('/chathub')  // Changed from absolute to relative URL
+        .withAutomaticReconnect()
+        .configureLogging(signalR.LogLevel.Information)  // Added for debugging
+        .build()
+
+      connection.value.on('ReceiveMessage', (message) => {
+        messages.value.push(message)
+        scrollToBottom()
+      })
+
+      connection.value.on('UserTyping', (user) => {
+        typingUser.value = user
+        isTyping.value = true
+
+        clearTimeout(typingTimeout)
+        typingTimeout = setTimeout(() => {
+          isTyping.value = false
+        }, 2000)
+      })
+
+      connection.value.on('UserConnected', (connectionId) => {
+        console.log('User connected:', connectionId)
+      })
+
+      connection.value.on('UserDisconnected', (connectionId) => {
+        console.log('User disconnected:', connectionId)
+      })
+
+      connection.value.onreconnecting((error) => {
+        console.log('Connection lost, reconnecting...', error)
+        isConnected.value = false
+      })
+
+      connection.value.onreconnected((connectionId) => {
+        console.log('Reconnected with ID:', connectionId)
+        isConnected.value = true
+      })
+
+      connection.value.onclose((error) => {
+        console.log('Connection closed', error)
+        isConnected.value = false
+      })
+
+      await connection.value.start()
+      isConnected.value = true
+      console.log('Connected to chat hub successfully!')
+    } catch (err) {
+      console.error('Connection failed:', err)
+      alert(`Failed to connect to chat: ${err.message || 'Unknown error'}`)
+    }
+  }
+
+  const sendMessage = async () => {
+    if (!newMessage.value.trim() || !isConnected.value) return
+
+    try {
+      await connection.value.invoke('SendMessage', username.value, newMessage.value)
+      newMessage.value = ''
+    } catch (err) {
+      console.error('Error sending message:', err)
+    }
+  }
+
+  const handleTyping = async () => {
+    if (!isConnected.value) return
+
+    try {
+      await connection.value.invoke('UserTyping', username.value)
+    } catch (err) {
+      console.error('Error sending typing indicator:', err)
+    }
+  }
+
+  const formatTime = (timestamp) => {
+    const date = new Date(timestamp)
+    return date.toLocaleTimeString('en-US', {
+      hour: '2-digit',
+      minute: '2-digit'
+    })
+  }
+
+  const disconnect = async () => {
+    if (connection.value) {
+      await connection.value.stop()
+      isConnected.value = false
+      messages.value = []
+      newMessage.value = ''
+    }
+  }
+
+  onUnmounted(async () => {
+    await disconnect()
   })
-}
-
-const connectToChat = async () => {
-  if (!username.value.trim()) {
-    alert('Please enter a username')
-    return
-  }
-
-  try {
-    connection.value = new signalR.HubConnectionBuilder()
-      .withUrl('https://localhost:7086/chathub')
-      .withAutomaticReconnect()
-      .build()
-
-    connection.value.on('ReceiveMessage', (message) => {
-      messages.value.push(message)
-      scrollToBottom()
-    })
-
-    connection.value.on('UserTyping', (user) => {
-      typingUser.value = user
-      isTyping.value = true
-
-      clearTimeout(typingTimeout)
-      typingTimeout = setTimeout(() => {
-        isTyping.value = false
-      }, 2000)
-    })
-
-    connection.value.on('UserConnected', (connectionId) => {
-      console.log('User connected:', connectionId)
-    })
-
-    connection.value.on('UserDisconnected', (connectionId) => {
-      console.log('User disconnected:', connectionId)
-    })
-
-    await connection.value.start()
-    isConnected.value = true
-    console.log('Connected to chat hub')
-  } catch (err) {
-    console.error('Connection failed:', err)
-    alert('Failed to connect to chat. Please try again.')
-  }
-}
-
-const sendMessage = async () => {
-  if (!newMessage.value.trim() || !isConnected.value) return
-
-  try {
-    await connection.value.invoke('SendMessage', username.value, newMessage.value)
-    newMessage.value = ''
-  } catch (err) {
-    console.error('Error sending message:', err)
-  }
-}
-
-const handleTyping = async () => {
-  if (!isConnected.value) return
-
-  try {
-    await connection.value.invoke('UserTyping', username.value)
-  } catch (err) {
-    console.error('Error sending typing indicator:', err)
-  }
-}
-
-const formatTime = (timestamp) => {
-  const date = new Date(timestamp)
-  return date.toLocaleTimeString('en-US', {
-    hour: '2-digit',
-    minute: '2-digit'
-  })
-}
-
-const disconnect = async () => {
-  if (connection.value) {
-    await connection.value.stop()
-    isConnected.value = false
-    messages.value = []
-    newMessage.value = ''
-  }
-}
-
-onUnmounted(async () => {
-  await disconnect()
-})
 </script>
 
 <template>
