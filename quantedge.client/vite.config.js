@@ -50,6 +50,11 @@ export default defineConfig({
             '^/weatherforecast': {
                 target,
                 secure: false
+            },
+            '^/chathub': {
+                target,
+                secure: false,
+                ws: true
             }
         },
         port: parseInt(env.DEV_SERVER_PORT || '53411'),
