@@ -1,0 +1,33 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.14.36603.0 d17.14
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{54A90642-561A-4BB1-A94E-469ADEE60C69}") = "quantedge.client", "quantedge.client\quantedge.client.esproj", "{7F4F369A-FE06-34CA-7BCD-DF037BD19D57}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "QuantEdge.Server", "QuantEdge.Server\QuantEdge.Server.csproj", "{295AF1B6-56EC-414A-9F0D-34F22D398D01}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{7F4F369A-FE06-34CA-7BCD-DF037BD19D57}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7F4F369A-FE06-34CA-7BCD-DF037BD19D57}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7F4F369A-FE06-34CA-7BCD-DF037BD19D57}.Debug|Any CPU.Deploy.0 = Debug|Any CPU
+		{7F4F369A-FE06-34CA-7BCD-DF037BD19D57}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7F4F369A-FE06-34CA-7BCD-DF037BD19D57}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7F4F369A-FE06-34CA-7BCD-DF037BD19D57}.Release|Any CPU.Deploy.0 = Release|Any CPU
+		{295AF1B6-56EC-414A-9F0D-34F22D398D01}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{295AF1B6-56EC-414A-9F0D-34F22D398D01}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{295AF1B6-56EC-414A-9F0D-34F22D398D01}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{295AF1B6-56EC-414A-9F0D-34F22D398D01}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {844E2993-0939-4C0F-85DF-E82738E7E2C7}
+	EndGlobalSection
+EndGlobal

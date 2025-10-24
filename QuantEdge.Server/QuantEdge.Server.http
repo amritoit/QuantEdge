@@ -1,0 +1,6 @@
+@QuantEdge.Server_HostAddress = http://localhost:5137
+
+GET {{QuantEdge.Server_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
