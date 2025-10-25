@@ -71,12 +71,12 @@ namespace QuantEdge.Server.Hubs
                 {
                     User = "System",
                     Message = @"📋 Available Commands:
-/help - Show this help message
-/users - Show online users count
-/time - Show current server time
-/clear - Clear your chat (client-side)
+                        /help - Show this help message
+                        /users - Show online users count
+                        /time - Show current server time
+                        /clear - Clear your chat (client-side)
                     
-Try saying 'hello' to get a bot response!",
+                        Try saying 'hello' to get a bot response!",
                     Timestamp = DateTime.UtcNow,
                     MessageId = Guid.NewGuid().ToString(),
                     Type = MessageType.System
@@ -115,10 +115,11 @@ Try saying 'hello' to get a bot response!",
             // Question response
             if (lowerMessage.Contains("?"))
             {
+                var llmResponse = await _getReplyFromLLM(lowerMessage);
                 var questionResponse = new ChatMessage
                 {
                     User = "ChatBot",
-                    Message = "🤔 That's an interesting question! Our team will get back to you soon.",
+                    Message = llmResponse,
                     Timestamp = DateTime.UtcNow,
                     MessageId = Guid.NewGuid().ToString(),
                     Type = MessageType.Bot
@@ -126,6 +127,13 @@ Try saying 'hello' to get a bot response!",
                 await Task.Delay(800);
                 await Clients.All.SendAsync("ReceiveMessage", questionResponse);
             }
+        }
+
+
+        private async Task<string> _getReplyFromLLM(string query)
+        {
+            var response = await chatCompletionClient.RunChatCompletionAsync("", query);
+            return response;
         }
 
         public async Task UserTyping(string user)
