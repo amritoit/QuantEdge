@@ -1,6 +1,10 @@
 ﻿<script setup>
     import { ref, onMounted, onUnmounted, nextTick } from 'vue'
     import * as signalR from '@microsoft/signalr'
+    import { ref, onMounted, onUnmounted, nextTick } from 'vue'
+    import * as signalR from '@microsoft/signalr'
+    import MarkdownIt from 'markdown-it'
+    const md = new MarkdownIt({ breaks: true })
 
     const messages = ref([])
     const newMessage = ref('')
@@ -145,6 +149,15 @@
         }
     }
 
+    export default {
+        props: ['message'],
+        computed: {
+            renderedMessage() {
+                return md.render(this.message)
+            }
+        }
+    }
+
     onUnmounted(async () => {
         await disconnect()
     })
@@ -180,6 +193,7 @@
                         <span class="message-time">{{ formatTime(msg.timestamp) }}</span>
                     </div>
                     <div class="message-text">{{ msg.message }}</div>
+                    <div class="chat-message" v-html="renderedMessage"></div>
                 </div>
 
                 <div v-if="isTyping" class="typing-indicator">

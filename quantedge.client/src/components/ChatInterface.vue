@@ -3,6 +3,31 @@ src/components/ChatInterface.vue
   import { ref, onMounted, onUnmounted, nextTick } from 'vue'
   import * as signalR from '@microsoft/signalr'
 
+  import MarkdownIt from 'markdown-it'
+  import DOMPurify from 'dompurify'
+  import hljs from 'highlight.js'
+  import 'highlight.js/styles/github-dark.css' // or any style you like
+
+  // create markdown renderer with code highlighting
+  const md = new MarkdownIt({
+    breaks: true,
+    linkify: true,
+    highlight: function (str, lang) {
+      if (lang && hljs.getLanguage(lang)) {
+        try {
+          return `<pre class="hljs"><code>${hljs.highlight(str, { language: lang, ignoreIllegals: true }).value}</code></pre>`
+        } catch (__) { }
+      }
+      return `<pre class="hljs"><code>${md.utils.escapeHtml(str)}</code></pre>`
+    }
+  })
+
+  // helper to turn markdown -> safe HTML
+  const renderMarkdown = (text) => {
+    const dirty = md.render(text || '')
+    return DOMPurify.sanitize(dirty)
+  }
+
   const messages = ref([])
   const newMessage = ref('')
   const username = ref('')
@@ -154,7 +179,7 @@ src/components/ChatInterface.vue
             <span class="message-user">{{ msg.user }}</span>
             <span class="message-time">{{ formatTime(msg.timestamp) }}</span>
           </div>
-          <div class="message-text">{{ msg.message }}</div>
+          <div class="message-text" v-html="renderMarkdown(msg.message)"></div>
         </div>
 
         <div v-if="isTyping" class="typing-indicator">
@@ -181,6 +206,25 @@ src/components/ChatInterface.vue
 </template>
 
 <style scoped>
+  .message-text pre.hljs {
+    background: #1e1e1e;
+    padding: 0.75rem;
+    border-radius: 8px;
+    overflow-x: auto; /* horizontal scroll if needed */
+    white-space: pre-wrap; /* wrap long lines */
+    word-break: break-word; /* break extremely long words */
+    max-width: 100%; /* prevent overflow outside bubble */
+    box-sizing: border-box; /* include padding in width */
+  }
+
+    .message-text pre.hljs code {
+      display: block; /* ensures full background covers line */
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+
+
   .chat-container {
     max-width: 800px;
     margin: 2rem auto;

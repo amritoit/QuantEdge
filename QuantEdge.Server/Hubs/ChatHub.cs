@@ -132,7 +132,12 @@ namespace QuantEdge.Server.Hubs
 
         private async Task<string> _getReplyFromLLM(string query)
         {
-            var response = await chatCompletionClient.RunChatCompletionAsync("", query);
+            string systemLLMPrompt = @"
+                You are a helpful assistant in a chat application. 
+                Provide concise and friendly responses to user queries. 
+                Please provide output in format to display nicely in chat bot and human redable with 
+                proper paragraphs etc.";
+            var response = await chatCompletionClient.RunChatCompletionAsync(systemLLMPrompt, query);
             return response;
         }
 
