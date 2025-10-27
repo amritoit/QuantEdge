@@ -6,7 +6,27 @@ src/components/ChatInterface.vue
   import MarkdownIt from 'markdown-it'
   import DOMPurify from 'dompurify'
   import hljs from 'highlight.js'
-  import 'highlight.js/styles/github-dark.css' // or any style you like
+
+  // Dynamic theme detection and highlight.js style switching
+  const isDarkMode = ref(false)
+
+  const updateTheme = () => {
+    isDarkMode.value = window.matchMedia('(prefers-color-scheme: dark)').matches
+
+    // Dynamically load appropriate highlight.js theme
+    const existingLink = document.querySelector('link[data-hljs-theme]')
+    if (existingLink) {
+      existingLink.remove()
+    }
+
+    const link = document.createElement('link')
+    link.rel = 'stylesheet'
+    link.setAttribute('data-hljs-theme', '')
+    link.href = isDarkMode.value
+      ? 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css'
+      : 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css'
+    document.head.appendChild(link)
+  }
 
   // create markdown renderer with code highlighting
   const md = new MarkdownIt({
@@ -38,6 +58,7 @@ src/components/ChatInterface.vue
   const messagesContainer = ref(null)
 
   let typingTimeout = null
+  let themeMediaQuery = null
 
   const scrollToBottom = () => {
     nextTick(() => {
@@ -55,9 +76,9 @@ src/components/ChatInterface.vue
 
     try {
       connection.value = new signalR.HubConnectionBuilder()
-        .withUrl('/chathub')  // Changed from absolute to relative URL
+        .withUrl('/chathub')
         .withAutomaticReconnect()
-        .configureLogging(signalR.LogLevel.Information)  // Added for debugging
+        .configureLogging(signalR.LogLevel.Information)
         .build()
 
       connection.value.on('ReceiveMessage', (message) => {
@@ -145,21 +166,38 @@ src/components/ChatInterface.vue
     }
   }
 
+  onMounted(() => {
+    // Initialize theme detection
+    updateTheme()
+
+    // Listen for theme changes
+    themeMediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
+    themeMediaQuery.addEventListener('change', updateTheme)
+  })
+
   onUnmounted(async () => {
     await disconnect()
+
+    // Clean up theme listener
+    if (themeMediaQuery) {
+      themeMediaQuery.removeEventListener('change', updateTheme)
+    }
   })
 </script>
 
 <template>
-  <div class="chat-container">
+  <div class="chat-container" :class="{ 'dark-mode': isDarkMode }">
     <div class="chat-header">
-      <h2>💬 Chat Interface</h2>
-      <span v-if="isConnected" class="status connected">Connected</span>
-      <span v-else class="status disconnected">Disconnected</span>
+      <h2>💬 QuantEdge</h2>
+      <div class="header-controls">
+        <span class="theme-indicator">{{ isDarkMode ? '🌙' : '☀️' }}</span>
+        <span v-if="isConnected" class="status connected">Connected</span>
+        <span v-else class="status disconnected">Disconnected</span>
+      </div>
     </div>
 
     <div v-if="!isConnected" class="login-section">
-      <h3>Enter the Chat</h3>
+      <h3>Start</h3>
       <input v-model="username"
              type="text"
              placeholder="Enter your username"
@@ -206,33 +244,49 @@ src/components/ChatInterface.vue
 </template>
 
 <style scoped>
-  .message-text pre.hljs {
-    background: #1e1e1e;
-    padding: 0.75rem;
-    border-radius: 8px;
-    overflow-x: auto; /* horizontal scroll if needed */
-    white-space: pre-wrap; /* wrap long lines */
-    word-break: break-word; /* break extremely long words */
-    max-width: 100%; /* prevent overflow outside bubble */
-    box-sizing: border-box; /* include padding in width */
+  /* CSS Custom Properties for Theme Support */
+  .chat-container {
+    --bg-primary: #ffffff;
+    --bg-secondary: #f9fafb;
+    --bg-tertiary: #ffffff;
+    --text-primary: #000000;
+    --text-secondary: #333333;
+    --text-muted: #6b7280;
+    --border-color: #ddd;
+    --border-light: #e5e7eb;
+    --shadow-color: rgba(0, 0, 0, 0.1);
+    --message-bg: #ffffff;
+    --message-border: #e5e7eb;
+    --input-bg: #ffffff;
+    --input-border: #ddd;
   }
 
-    .message-text pre.hljs code {
-      display: block; /* ensures full background covers line */
-      white-space: pre-wrap;
-      word-break: break-word;
+    /* Dark Mode Variables */
+    .chat-container.dark-mode {
+      --bg-primary: #1f2937;
+      --bg-secondary: #111827;
+      --bg-tertiary: #374151;
+      --text-primary: #f9fafb;
+      --text-secondary: #e5e7eb;
+      --text-muted: #9ca3af;
+      --border-color: #4b5563;
+      --border-light: #374151;
+      --shadow-color: rgba(0, 0, 0, 0.3);
+      --message-bg: #374151;
+      --message-border: #4b5563;
+      --input-bg: #374151;
+      --input-border: #4b5563;
     }
-
-
 
   .chat-container {
     max-width: 800px;
     margin: 2rem auto;
-    border: 1px solid #ddd;
+    border: 1px solid var(--border-color);
     border-radius: 12px;
     overflow: hidden;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    background: white;
+    box-shadow: 0 4px 6px var(--shadow-color);
+    background: var(--bg-primary);
+    transition: all 0.3s ease;
   }
 
   .chat-header {
@@ -248,6 +302,17 @@ src/components/ChatInterface.vue
       margin: 0;
       font-size: 1.5rem;
     }
+
+  .header-controls {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .theme-indicator {
+    font-size: 1.2rem;
+    opacity: 0.8;
+  }
 
   .status {
     padding: 0.5rem 1rem;
@@ -267,11 +332,12 @@ src/components/ChatInterface.vue
   .login-section {
     padding: 3rem;
     text-align: center;
+    background: var(--bg-primary);
   }
 
     .login-section h3 {
       margin-bottom: 1.5rem;
-      color: #333;
+      color: var(--text-secondary);
     }
 
   .username-input {
@@ -279,15 +345,21 @@ src/components/ChatInterface.vue
     max-width: 300px;
     padding: 0.75rem;
     margin-bottom: 1rem;
-    border: 2px solid #ddd;
+    border: 2px solid var(--input-border);
     border-radius: 8px;
     font-size: 1rem;
-    transition: border-color 0.3s;
+    background: var(--input-bg);
+    color: var(--text-primary);
+    transition: border-color 0.3s, background-color 0.3s;
   }
 
     .username-input:focus {
       outline: none;
       border-color: #667eea;
+    }
+
+    .username-input::placeholder {
+      color: var(--text-muted);
     }
 
   .connect-btn {
@@ -310,13 +382,15 @@ src/components/ChatInterface.vue
     display: flex;
     flex-direction: column;
     height: 600px;
+    background: var(--bg-primary);
   }
 
   .messages-container {
     flex: 1;
     padding: 1.5rem;
     overflow-y: auto;
-    background: #f9fafb;
+    background: var(--bg-secondary);
+    transition: background-color 0.3s;
   }
 
   .message {
@@ -325,6 +399,7 @@ src/components/ChatInterface.vue
     border-radius: 8px;
     max-width: 70%;
     animation: slideIn 0.3s ease;
+    transition: all 0.3s ease;
   }
 
   @keyframes slideIn {
@@ -346,8 +421,9 @@ src/components/ChatInterface.vue
   }
 
   .other-message {
-    background: white;
-    border: 1px solid #e5e7eb;
+    background: var(--message-bg);
+    border: 1px solid var(--message-border);
+    color: var(--text-primary);
   }
 
   .message-header {
@@ -360,44 +436,116 @@ src/components/ChatInterface.vue
 
   .message-user {
     font-weight: bold;
+    color: inherit;
   }
 
   .message-time {
     font-size: 0.7rem;
+    color: inherit;
   }
 
   .message-text {
     font-size: 0.95rem;
     word-wrap: break-word;
+    color: inherit;
   }
+
+  /* Dark mode specific styles for message text content */
+  .dark-mode .message-text :deep(h1),
+  .dark-mode .message-text :deep(h2),
+  .dark-mode .message-text :deep(h3),
+  .dark-mode .message-text :deep(h4),
+  .dark-mode .message-text :deep(h5),
+  .dark-mode .message-text :deep(h6) {
+    color: var(--text-primary);
+  }
+
+  .dark-mode .message-text :deep(p) {
+    color: var(--text-primary);
+  }
+
+  .dark-mode .message-text :deep(ul),
+  .dark-mode .message-text :deep(ol),
+  .dark-mode .message-text :deep(li) {
+    color: var(--text-primary);
+  }
+
+  .dark-mode .message-text :deep(a) {
+    color: #60a5fa;
+  }
+
+  .dark-mode .message-text :deep(a:hover) {
+    color: #93c5fd;
+  }
+
+  .dark-mode .message-text :deep(code) {
+    background: rgba(255, 255, 255, 0.1);
+    color: #f9fafb;
+  }
+
+  .dark-mode .message-text :deep(blockquote) {
+    border-left: 4px solid var(--border-color);
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text-secondary);
+  }
+
+  /* Code blocks in dark mode */
+  .dark-mode .message-text pre.hljs {
+    background: #0d1117 !important;
+    border: 1px solid var(--border-color);
+  }
+
+  .message-text pre.hljs {
+    padding: 0.75rem;
+    border-radius: 8px;
+    overflow-x: auto;
+    white-space: pre-wrap;
+    word-break: break-word;
+    max-width: 100%;
+    box-sizing: border-box;
+    transition: all 0.3s ease;
+  }
+
+    .message-text pre.hljs code {
+      display: block;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
 
   .typing-indicator {
     padding: 0.5rem;
     font-style: italic;
-    color: #6b7280;
+    color: var(--text-muted);
     font-size: 0.875rem;
   }
 
   .input-section {
     display: flex;
     padding: 1rem;
-    background: white;
-    border-top: 1px solid #e5e7eb;
+    background: var(--bg-tertiary);
+    border-top: 1px solid var(--border-light);
     gap: 0.5rem;
+    transition: all 0.3s ease;
   }
 
   .message-input {
     flex: 1;
     padding: 0.75rem;
-    border: 2px solid #ddd;
+    border: 2px solid var(--input-border);
     border-radius: 8px;
     font-size: 1rem;
-    transition: border-color 0.3s;
+    background: var(--input-bg);
+    color: var(--text-primary);
+    transition: border-color 0.3s, background-color 0.3s;
   }
 
     .message-input:focus {
       outline: none;
       border-color: #667eea;
+    }
+
+    .message-input::placeholder {
+      color: var(--text-muted);
     }
 
   .send-btn {
@@ -408,11 +556,12 @@ src/components/ChatInterface.vue
     border-radius: 8px;
     font-weight: bold;
     cursor: pointer;
-    transition: background 0.3s;
+    transition: background 0.3s, transform 0.2s;
   }
 
     .send-btn:hover {
       background: #059669;
+      transform: translateY(-1px);
     }
 
   .disconnect-btn {
@@ -423,10 +572,60 @@ src/components/ChatInterface.vue
     border-radius: 8px;
     font-weight: bold;
     cursor: pointer;
-    transition: background 0.3s;
+    transition: background 0.3s, transform 0.2s;
   }
 
     .disconnect-btn:hover {
       background: #dc2626;
+      transform: translateY(-1px);
     }
+
+  /* Responsive Design */
+  @media (max-width: 768px) {
+    .chat-container {
+      margin: 1rem;
+      border-radius: 8px;
+    }
+
+    .message {
+      max-width: 85%;
+    }
+
+    .header-controls {
+      gap: 0.5rem;
+    }
+  }
+
+  /* High Contrast Mode Support */
+  @media (prefers-contrast: high) {
+    .chat-container {
+      border-width: 2px;
+    }
+
+    .message {
+      border-width: 2px;
+    }
+
+    .username-input,
+    .message-input {
+      border-width: 3px;
+    }
+  }
+
+  /* Reduced Motion Support */
+  @media (prefers-reduced-motion: reduce) {
+    .chat-container,
+    .message,
+    .username-input,
+    .message-input,
+    .send-btn,
+    .disconnect-btn,
+    .connect-btn {
+      transition: none;
+    }
+
+    .message {
+      animation: none;
+    }
+  }
 </style>
