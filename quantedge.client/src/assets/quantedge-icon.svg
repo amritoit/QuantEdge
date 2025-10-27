@@ -1,0 +1,24 @@
+<!-- Save as quantedge-icon.svg -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200" role="img" aria-label="QuantEdge logo icon">
+  <defs>
+    <linearGradient id="g1" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0" stop-color="#0066FF"/>
+      <stop offset="1" stop-color="#00C2A8"/>
+    </linearGradient>
+    <filter id="f1" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="6" stdDeviation="10" flood-opacity="0.15"/>
+    </filter>
+  </defs>
+
+  <!-- background rounded square -->
+  <rect x="6" y="6" width="188" height="188" rx="36" fill="#0F1724" />
+
+  <!-- circular 'Q' stroke -->
+  <g transform="translate(0,0)">
+    <circle cx="100" cy="92" r="48" fill="none" stroke="url(#g1)" stroke-width="16" stroke-linecap="round" stroke-linejoin="round"/>
+    <!-- the 'edge' cut / triangular wedge -->
+    <path d="M128 68 L164 48 L152 84 Z" fill="#00E0C1" transform="rotate(8 140 66)"/>
+    <!-- small inner cut to suggest 'Q' tail -->
+    <path d="M115 118 L136 134" stroke="#00E0C1" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+</svg>

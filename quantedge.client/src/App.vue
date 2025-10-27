@@ -4,9 +4,9 @@
 
 <template>
   <header>
-    <img alt="Vue logo" class="logo" src="./assets/logo.svg" width="125" height="125" />
+    <img alt="QuantEdge logo" class="logo" src="/src/assets/quantedge-icon.svg" width="125" height="125" />
     <div class="wrapper">
-      <h1>QuantEdge Chat</h1>
+      <h1>QuantEdge</h1>
     </div>
   </header>
 
