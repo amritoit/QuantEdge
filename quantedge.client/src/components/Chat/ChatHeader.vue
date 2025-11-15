@@ -1,6 +1,6 @@
 <template>
   <div class="chat-header">
-    <h2>🦖 QuantEdge</h2>
+    <h2>QuantEdge</h2>
     <div class="header-controls">
       <span class="theme-indicator">{{ isDarkMode ? '🌙' : '☀️' }}</span>
       <span v-if="isConnected" class="status connected">Connected</span>
