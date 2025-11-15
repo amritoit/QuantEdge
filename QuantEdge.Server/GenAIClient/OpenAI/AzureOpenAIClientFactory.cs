@@ -1,3 +1,4 @@
+using Azure;
 using Azure.AI.OpenAI;
 using Azure.Core;
 using Azure.Identity;
@@ -42,8 +43,43 @@ namespace GSHCommon.AzureOpenAI
         /// <returns>A configured OpenAI client instance.</returns>
         public OpenAIClient GetOrCreateClient(string endpoint = null)
         {
-            return GetOrCreateClient(endpoint, new VisualStudioCredential());
+            string? apiKey = Environment.GetEnvironmentVariable("AZURE_OPENAI_KEY");
+            if (string.IsNullOrEmpty(apiKey))
+            {     
+                return GetOrCreateClient(endpoint, new VisualStudioCredential());
+            }
+            else
+            {
+                var credential = new AzureKeyCredential(apiKey!);
+                return GetOrCreateClient(endpoint, credential);
+            }
         }
+
+        /// <summary>
+        /// Gets or creates an Azure OpenAI client with the specified endpoint and credential.
+        /// This method provides a singleton client per unique endpoint and credential type combination.
+        /// </summary>
+        /// <param name="endpoint">The Azure OpenAI endpoint URL. If null or empty, uses default endpoint.</param>
+        /// <param name="credential">The token credential to use for authentication.</param>
+        /// <returns>A configured OpenAI client instance.</returns>
+        public OpenAIClient GetOrCreateClient(string endpoint, AzureKeyCredential credential)
+        {
+            if (string.IsNullOrWhiteSpace(endpoint))
+            {
+                endpoint = GetDefaultEndpoint();
+            }
+
+            if (credential == null)
+            {
+                throw new ArgumentNullException(nameof(credential), "Token credential cannot be null");
+            }
+
+            // Create a cache key based on endpoint and credential type
+            string cacheKey = $"{endpoint}::{credential.GetHashCode}";
+
+            return _clientCache.GetOrAdd(cacheKey, _ => CreateClient(endpoint, credential));
+        }
+
 
         /// <summary>
         /// Gets or creates an Azure OpenAI client with the specified endpoint and credential.
@@ -128,6 +164,27 @@ namespace GSHCommon.AzureOpenAI
         /// <param name="credential">The token credential for authentication.</param>
         /// <returns>A new OpenAI client instance.</returns>
         private static OpenAIClient CreateClient(string endpoint, TokenCredential credential)
+        {
+            try
+            {
+                var uri = new Uri(endpoint);
+                return new OpenAIClient(uri, credential);
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException(
+                    $"Failed to create Azure OpenAI chatCompletionsClient for endpoint '{endpoint}': {ex.Message}", ex);
+            }
+        }
+
+
+        /// <summary>
+        /// Creates a new OpenAI client instance.
+        /// </summary>
+        /// <param name="endpoint">The Azure OpenAI endpoint URL.</param>
+        /// <param name="credential">The token credential for authentication.</param>
+        /// <returns>A new OpenAI client instance.</returns>
+        private static OpenAIClient CreateClient(string endpoint, AzureKeyCredential credential)
         {
             try
             {
